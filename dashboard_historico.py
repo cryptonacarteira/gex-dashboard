@@ -49,7 +49,7 @@ def fig_historico(teste):
             x=d["Data"], y=d["Call Wall"], name=f"{a} Call Wall", legendgroup=a,
             mode="lines+markers", visible=vis, line=dict(color=CALL_COLOR, width=2)))
         fig.add_trace(go.Scatter(
-            x=d["Data"], y=d["Put Suport"], name=f"{a} Put Suport", legendgroup=a,
+            x=d["Data"], y=d["Put Wall"], name=f"{a} Put Wall", legendgroup=a,
             mode="lines+markers", visible=vis, line=dict(color=PUT_COLOR, width=2)))
         fig.add_trace(go.Scatter(
             x=d["Data"], y=d["Gamma Flip"], name=f"{a} Gamma Flip", legendgroup=a,
@@ -58,7 +58,7 @@ def fig_historico(teste):
             x=d["Data"], y=d["Spot"], name=f"{a} Spot", legendgroup=a,
             mode="lines+markers", visible=vis, line=dict(color=SPOT_COLOR, width=2, dash="dash")))
     fig.update_layout(
-        title="Call Wall · Put Suport · Gamma Flip · Spot (histórico)",
+        title="Call Wall · Put Wall · Gamma Flip · Spot (histórico)",
         template="plotly_white", hovermode="x unified", height=520,
         legend=dict(orientation="h", y=-0.2),
         updatemenus=[dict(buttons=botao_ativos(ativos, 4), direction="down",
@@ -146,9 +146,9 @@ def fig_perfil(gex_total, max_datas=60):
 def tabela_resumo(teste):
     ult = teste.sort_values("Data").groupby("Ativo").tail(1)
     ult = ult.sort_values("Ativo")
-    ult = ult[["Ativo", "Data", "Spot", "Call Wall", "Put Suport", "Gamma Flip", "Gex Total (Bn)"]]
+    ult = ult[["Ativo", "Data", "Spot", "Call Wall", "Put Wall", "Gamma Flip", "Gex Total (Bn)"]]
     return go.Figure(data=[go.Table(
-        header=dict(values=["Ativo", "Data", "Spot", "Call Wall", "Put Suport", "Gamma Flip", "GEX Total ($Bn)"],
+        header=dict(values=["Ativo", "Data", "Spot", "Call Wall", "Put Wall", "Gamma Flip", "GEX Total ($Bn)"],
                     fill_color=NET_COLOR, font=dict(color="white", size=13), align="center"),
         cells=dict(values=[ult[c] for c in ult.columns],
                    fill_color="white", font=dict(size=12), align="center",
@@ -184,7 +184,7 @@ def main():
 
     figuras = [
         ("Resumo do último dia", tabela_resumo(teste)),
-        ("Call Wall / Put Suport / Gamma Flip / Spot", fig_historico(teste)),
+        ("Call Wall / Put Wall / Gamma Flip / Spot", fig_historico(teste)),
         ("Call vs Put", fig_call_put(teste)),
         ("GEX por região", fig_regioes(teste)),
     ]

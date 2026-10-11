@@ -61,7 +61,7 @@ def main():
 
     col_gex_total = ['Data', 'Ativo', 'Strike', 'Call', 'Put', 'Total']
     col_gex_tabela = ['Data', 'Ativo', 'Strike', 'Gex', 'GEX Total (Bn)']
-    col_teste = ['Data', 'Ativo', 'Spot', 'Put Suport', 'Call Wall', 'Gamma Flip'] + NOMES_REGIOES + ['Call', 'Put', 'Gex Total (Bn)', 'IV Medio']
+    col_teste = ['Data', 'Ativo', 'Spot', 'Put Wall', 'Call Wall', 'Gamma Flip'] + NOMES_REGIOES + ['Call', 'Put', 'Gex Total (Bn)', 'IV Medio']
     col_range = ['Data', 'Ativo', 'IV Medio', 'IV Max-Min', 'Range %']
     col_calendario = ['Date', 'Dia', 'Mes', 'Ano', 'Call Dia Anterior', 'DesvKEY']
 
@@ -110,7 +110,7 @@ def main():
             gex_total_hoje.append([data, nome, float(s), float(calls.loc[s]), float(puts.loc[s]), float(total.loc[s])])
             gex_tabela_hoje.append([data, nome, float(s), regiao(s, spot), float(total.loc[s])])
 
-        put_suport = float(puts.idxmin())
+        put_wall = float(puts.idxmin())
         call_wall = float(calls.idxmax())
         flip = None
         for i in range(len(total) - 1):
@@ -127,7 +127,7 @@ def main():
         for s in total.index:
             gex_por_regiao[regiao(s, spot)] += float(total.loc[s])
 
-        linha = [data, nome, float(spot), put_suport, call_wall, flip if flip is not None else np.nan]
+        linha = [data, nome, float(spot), put_wall, call_wall, flip if flip is not None else np.nan]
         linha += [gex_por_regiao[reg] for reg in NOMES_REGIOES]
         linha += [float(calls.sum()), float(puts.sum()), float(total.sum())]
 
@@ -149,7 +149,7 @@ def main():
 
         teste_hoje.append(linha)
         range_hoje.append([data, nome, iv_medio, iv_max_min, range_pct])
-        print(f"  {nome}: spot={spot:,.2f} GEX total=${total.sum():,.2f}Bn put_suport={put_suport:,.0f} call_wall={call_wall:,.0f}")
+        print(f"  {nome}: spot={spot:,.2f} GEX total=${total.sum():,.2f}Bn put_wall={put_wall:,.0f} call_wall={call_wall:,.0f}")
 
     if not teste_hoje:
         print("Nenhum dado disponível.")
