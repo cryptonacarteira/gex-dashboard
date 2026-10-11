@@ -6,20 +6,24 @@ import sys
 
 import requests
 
-CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/_SPX.json"
-OUTPUT = "spx_quotedata.csv"
+MERCADOS = [
+    ("SPX", "_SPX", "spx_quotedata.csv"),
+    ("NDX", "_NDX", "ndx_quotedata.csv"),
+    ("QQQ", "QQQ", "qqq_quotedata.csv"),
+]
+
+CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/{}.json"
 HEADERS = {
     "Accept": "application/json",
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                   "(KHTML, like Gecko) Chrome/124.0 Safari/537.36",
 }
 
-
 OCC_PATTERN = re.compile(r"^([A-Z]+)(\d{6})([CP])(\d{8})$")
 
 
 def parse_occ(symbol):
-    # OCC: ROOT (SPX/SPXW) + YYMMDD + C/P + strike (últimos 8 dígitos = strike * 1000)
+    # OCC: ROOT + YYMMDD + C/P + strike (últimos 8 dígitos = strike * 1000)
     m = OCC_PATTERN.match(symbol)
     if not m:
         raise ValueError(f"Símbolo OCC inesperado: {symbol}")
@@ -29,9 +33,9 @@ def parse_occ(symbol):
     return exp, option_type, strike
 
 
-def main():
-    print("Baixando cadeia de opções SPX da API pública da Cboe...")
-    resp = requests.get(CBOE_URL, headers=HEADERS, timeout=30)
+def gerar_csv(endpoint_suffix, output):
+    print(f"Baixando cadeia {output} da API pública da Cboe...")
+    resp = requests.get(CBOE_URL.format(endpoint_suffix), headers=HEADERS, timeout=30)
     resp.raise_for_status()
 
     data = resp.json()["data"]
@@ -39,7 +43,7 @@ def main():
     options = data["options"]
 
     if not options or spot <= 0:
-        print("Erro: API retornou dados vazios/inválidos.", file=sys.stderr)
+        print(f"Erro: API retornou dados vazios/inválidos para {output}.", file=sys.stderr)
         sys.exit(1)
 
     rows = []
@@ -70,9 +74,9 @@ def main():
                 num("volume"), num("iv"), num("delta"), num("gamma"), num("open_interest"),
             ])
 
-    with open(OUTPUT, "w", newline="", encoding="utf-8") as f:
+    with open(output, "w", newline="", encoding="utf-8") as f:
         w = csv.writer(f)
-        w.writerow(["SPX^QUOTES - Delayed Quotes"])
+        w.writerow([f"{endpoint_suffix} QUOTES - Delayed Quotes"])
         w.writerow([f"Underlying,Last:{spot},Net Chg,Bid,Ask,Volume,Open High,Open Low,Previous Close"])
         w.writerow([])
         w.writerow([
@@ -84,8 +88,13 @@ def main():
         for r in rows:
             w.writerow(r)
 
-    print(f"OK: {len(rows)} opções processadas. Spot SPX = {spot:.2f}")
-    print(f"Arquivo {OUTPUT} gerado no formato CBOE.")
+    print(f"OK: {len(rows)} opções processadas. Spot = {spot:.2f}")
+    print(f"Arquivo {output} gerado no formato CBOE.")
+
+
+def main():
+    for nome, endpoint_suffix, output in MERCADOS:
+        gerar_csv(endpoint_suffix, output)
 
 
 if __name__ == "__main__":
