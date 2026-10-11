@@ -55,10 +55,30 @@ def ler_mercado(filename):
             if flip is None or abs(level - spotPrice) < abs(flip - spotPrice):
                 flip = level
 
-    return spotPrice, strikes, call_wall, put_wall, net_gex, flip, total_gamma
+    call_wall_strike = strikes[int(np.argmax(call_wall))]
+    put_wall_strike = strikes[int(np.argmin(put_wall))]
+
+    return {
+        'spot': spotPrice,
+        'strikes': strikes,
+        'call_wall': call_wall,
+        'put_wall': put_wall,
+        'net_gex': net_gex,
+        'flip': flip,
+        'total_gamma': total_gamma,
+        'call_wall_strike': call_wall_strike,
+        'put_wall_strike': put_wall_strike,
+    }
 
 
-def adicionar_painel(fig, row, nome, spotPrice, strikes, call_wall, put_wall, net_gex, flip):
+def adicionar_painel(fig, row, nome, d):
+    strikes = d['strikes']
+    spotPrice = d['spot']
+    call_wall = d['call_wall']
+    put_wall = d['put_wall']
+    net_gex = d['net_gex']
+    flip = d['flip']
+
     ymin = min(net_gex.min(), put_wall.min())
     ymax = max(net_gex.max(), call_wall.max())
 
@@ -93,7 +113,10 @@ def adicionar_painel(fig, row, nome, spotPrice, strikes, call_wall, put_wall, ne
         ), row=row, col=1
     )
 
-    fig.add_hline(y=0, line=dict(color='grey', width=1, dash='dot'), row=row, col=1)
+    fig.add_shape(
+        type='line', x0=0.8 * spotPrice, y0=0, x1=1.2 * spotPrice, y1=0,
+        line=dict(color='grey', width=1, dash='dot'), row=row, col=1
+    )
     fig.add_shape(
         type='line', x0=spotPrice, y0=ymin, x1=spotPrice, y1=ymax,
         line=dict(color='red', width=2, dash='dash'), row=row, col=1
@@ -120,21 +143,61 @@ def adicionar_painel(fig, row, nome, spotPrice, strikes, call_wall, put_wall, ne
     fig.update_yaxes(tickformat='$,.2f', row=row, col=1)
 
 
-def processar_gex_e_enviar():
-    n = len(MERCADOS)
-    fig = make_subplots(
-        rows=n, cols=1, shared_xaxes=False, vertical_spacing=0.07,
-        subplot_titles=[m[0] for m in MERCADOS]
+def montar_tabela(dados):
+    colunas = ['Mercado', 'Spot', 'GEX Total ($Bn)', 'Gamma Flip', 'Call Wall', 'Put Wall']
+    mercado, spot, total, flip, cwall, pwall = [], [], [], [], [], []
+    for nome, d, _ in dados:
+        mercado.append(nome)
+        spot.append(f"{d['spot']:,.2f}")
+        total.append(f"${d['total_gamma']:,.2f}")
+        flip.append(f"{d['flip']:,.2f}" if d['flip'] is not None else 'n/d')
+        cwall.append(f"{d['call_wall_strike']:,.0f}")
+        pwall.append(f"{d['put_wall_strike']:,.0f}")
+
+    return go.Table(
+        columnwidth=[70, 110, 130, 120, 100, 100],
+        header=dict(
+            values=colunas,
+            fill_color='rgb(26, 118, 255)',
+            font=dict(color='white', size=14, family='Arial'),
+            align='center', height=32
+        ),
+        cells=dict(
+            values=[mercado, spot, total, flip, cwall, pwall],
+            fill_color='rgb(245, 248, 252)',
+            font=dict(color='black', size=13, family='Arial'),
+            align='center', height=30
+        )
     )
 
-    for row, (nome, csv_file) in enumerate(MERCADOS, start=1):
+
+def processar_gex_e_enviar():
+    dados = []
+    for nome, csv_file in MERCADOS:
         if not os.path.exists(csv_file):
             print(f"Erro: O arquivo {csv_file} não foi encontrado na pasta.")
             continue
-        spot, strikes, cw, pw, net, flip, total = ler_mercado(csv_file)
-        adicionar_painel(fig, row, nome, spot, strikes, cw, pw, net, flip)
-        flip_txt = f'{flip:,.2f}' if flip is not None else 'n/d'
-        print(f'{nome}: spot={spot:,.2f} total=${total:,.2f}Bn gamma_flip={flip_txt}')
+        d = ler_mercado(csv_file)
+        dados.append((nome, d, csv_file))
+        flip_txt = f"{d['flip']:,.2f}" if d['flip'] is not None else 'n/d'
+        print(f"{nome}: spot={d['spot']:,.2f} total=${d['total_gamma']:,.2f}Bn gamma_flip={flip_txt}")
+
+    n = len(dados)
+    if n == 0:
+        print("Nenhum dado disponível.")
+        return
+
+    fig = make_subplots(
+        rows=n + 1, cols=1, shared_xaxes=False, vertical_spacing=0.05,
+        row_heights=[0.10] + [0.90 / n] * n,
+        specs=[[{'type': 'table'}]] + [[{'type': 'xy'}]] * n,
+        subplot_titles=[''] + [nome for nome, _, _ in dados]
+    )
+
+    fig.add_trace(montar_tabela(dados), row=1, col=1)
+
+    for row, (nome, d, _) in enumerate(dados, start=2):
+        adicionar_painel(fig, row, nome, d)
 
     fig.update_layout(
         title={
@@ -146,9 +209,10 @@ def processar_gex_e_enviar():
         plot_bgcolor='white',
         font=dict(family='Arial', size=12, color='black'),
         width=1750,
-        height=2400
+        height=2600,
+        margin=dict(t=90)
     )
-    fig.update_annotations(font_size=18)
+    fig.update_annotations(font_size=16)
 
     output_html = 'dashboard_gex.html'
     fig.write_html(output_html)
@@ -162,7 +226,7 @@ def processar_gex_e_enviar():
 
     try:
         subprocess.run(['git', 'add', output_html], check=True)
-        for _, csv_file in MERCADOS:
+        for _, _, csv_file in dados:
             if os.path.exists(csv_file):
                 subprocess.run(['git', 'add', csv_file], check=True)
         commit_msg = f'Auto update GEX dashboard: {timestamp}'
