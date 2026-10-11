@@ -28,7 +28,7 @@ jobs:
       - name: Instalar dependencias
         run: pip install -r requirements.txt
 
-      - name: Baixar dados SPX / NDX / QQQ (Cboe API)
+      - name: Baixar dados dos tickers (Cboe API)
         run: python baixar_dados.py
 
       - name: Calcular GEX e gerar dashboard

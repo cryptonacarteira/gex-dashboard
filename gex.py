@@ -11,6 +11,9 @@ MERCADOS = [
     ("NDX", "ndx_quotedata.csv"),
     ("QQQ", "qqq_quotedata.csv"),
     ("EWZ", "ewz_quotedata.csv"),
+    ("SPY", "spy_quotedata.csv"),
+    ("IWM", "iwm_quotedata.csv"),
+    ("VIX", "vix_quotedata.csv"),
 ]
 
 MAX_EXP_INDIVIDUAIS = 6
