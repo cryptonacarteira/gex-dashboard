@@ -19,6 +19,7 @@ REGIAO_CORES = [
     "#edc948", "#b07aa1", "#ff9da7", "#9c755f", "#bab0ac",
 ]
 NOMES_REGIOES = [f"Gex {i}" for i in range(1, 11)]
+JANELA_DIAS = 22
 
 
 def carregar(nome):
@@ -26,6 +27,13 @@ def carregar(nome):
     if not os.path.exists(caminho):
         return pd.DataFrame()
     return pd.read_csv(caminho, encoding="utf-8", sep=";", decimal=",")
+
+
+def recortar_janela(df, janela):
+    datas = sorted(df["Data"].unique())
+    if len(datas) > janela:
+        datas = datas[-janela:]
+    return df[df["Data"].isin(datas)].copy()
 
 
 def botao_ativos(ativos, traces_por_ativo):
@@ -170,7 +178,7 @@ def montar_html(figuras):
 </head>
 <body style="margin:0;padding:24px;background:#f5f8fc;font-family:Arial">
 <h1 style="font-family:Arial">Dashboard GEX — Futuros &amp; Índices</h1>
-<p style="color:#666;font-family:Arial">Atualizado em {agora}</p>
+<p style="color:#666;font-family:Arial">Atualizado em {agora} · janela dos últimos {JANELA_DIAS} dias de pregão</p>
 {corpo}
 </body></html>"""
 
@@ -181,6 +189,10 @@ def main():
     if teste.empty:
         print("Sem histórico ainda. Rode primeiro o historico.py.")
         return
+
+    teste = recortar_janela(teste, JANELA_DIAS)
+    if not gex_total.empty:
+        gex_total = recortar_janela(gex_total, JANELA_DIAS)
 
     figuras = [
         ("Resumo do último dia", tabela_resumo(teste)),
