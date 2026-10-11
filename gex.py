@@ -110,23 +110,28 @@ def add_painel(fig, row, nome, d, visible):
     x0 = 0.8 * spot
     x1 = 1.2 * spot
 
+    diffs = np.diff(strikes)
+    diffs = diffs[diffs > 0]
+    step = float(np.median(diffs)) if len(diffs) else (x1 - x0) / 100.0
+    bar_width = step * 0.75
+
     fig.add_trace(go.Bar(
-        x=strikes, y=call_wall, width=6,
+        x=strikes, y=call_wall, width=bar_width,
         marker_color='rgb(38, 166, 91)', marker_line_color='black', marker_line_width=0.15,
         opacity=0.55, showlegend=False, visible=visible,
-        hovertemplate=f'{nome} %{{x:,.0f}}<br>Call Wall: %{{y:$,.3f}}<extra></extra>'
+        hovertemplate=f'{nome} %{{x:,.1f}}<br>Call Wall: %{{y:$,.3f}}<extra></extra>'
     ), row=row, col=1)
     fig.add_trace(go.Bar(
-        x=strikes, y=put_wall, width=6,
+        x=strikes, y=put_wall, width=bar_width,
         marker_color='rgb(255, 82, 82)', marker_line_color='black', marker_line_width=0.15,
         opacity=0.55, showlegend=False, visible=visible,
-        hovertemplate=f'{nome} %{{x:,.0f}}<br>Put Wall: %{{y:$,.3f}}<extra></extra>'
+        hovertemplate=f'{nome} %{{x:,.1f}}<br>Put Wall: %{{y:$,.3f}}<extra></extra>'
     ), row=row, col=1)
     fig.add_trace(go.Scatter(
         x=strikes, y=net, mode='lines+markers',
         line=dict(color='rgb(26, 118, 255)', width=2), marker=dict(size=4, color='rgb(26, 118, 255)'),
         showlegend=False, visible=visible,
-        hovertemplate=f'{nome} %{{x:,.0f}}<br>GEX Líquido: %{{y:$,.3f}}<extra></extra>'
+        hovertemplate=f'{nome} %{{x:,.1f}}<br>GEX Líquido: %{{y:$,.3f}}<extra></extra>'
     ), row=row, col=1)
 
     fig.add_trace(go.Scatter(x=[x0, x1], y=[0, 0], mode='lines',
