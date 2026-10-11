@@ -10,6 +10,7 @@ MERCADOS = [
     ("SPX", "_SPX", "spx_quotedata.csv"),
     ("NDX", "_NDX", "ndx_quotedata.csv"),
     ("QQQ", "QQQ", "qqq_quotedata.csv"),
+    ("EWZ", "EWZ", "ewz_quotedata.csv"),
 ]
 
 CBOE_URL = "https://cdn.cboe.com/api/global/delayed_quotes/options/{}.json"

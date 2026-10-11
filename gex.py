@@ -10,6 +10,7 @@ MERCADOS = [
     ("SPX", "spx_quotedata.csv"),
     ("NDX", "ndx_quotedata.csv"),
     ("QQQ", "qqq_quotedata.csv"),
+    ("EWZ", "ewz_quotedata.csv"),
 ]
 
 MAX_EXP_INDIVIDUAIS = 6
@@ -235,7 +236,7 @@ def processar_gex_e_enviar():
 
     fig.update_layout(
         title={
-            'text': 'Gamma Exposure: SPX | NDX | QQQ (US$ bilhões por 1% de movimento)',
+            'text': 'Gamma Exposure: ' + ' | '.join(nome for nome, _, _ in mercados) + ' (US$ bilhões por 1% de movimento)',
             'font': {'size': 20, 'family': 'Arial Black'}
         },
         barmode='overlay',
@@ -248,7 +249,7 @@ def processar_gex_e_enviar():
             bgcolor='white', bordercolor='rgba(0,0,0,0.4)', font=dict(size=13)
         )],
         width=1750,
-        height=2600,
+        height=int(300 + 780 * n),
         margin=dict(t=150)
     )
     fig.update_annotations(font_size=16)
