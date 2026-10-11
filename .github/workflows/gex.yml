@@ -2,8 +2,8 @@ name: GEX Dashboard
 
 on:
   schedule:
-    # Seg-Sex as 21:30 UTC (16:30 ET no inverno / 17:30 ET no verao), apos o fechamento
-    - cron: "30 21 * * 1-5"
+    # Seg-Sex as 11:50 UTC = 08:50 (Brasilia, UTC-3)
+    - cron: "50 11 * * 1-5"
   workflow_dispatch:
 
 permissions:
