@@ -110,10 +110,11 @@ def add_painel(fig, row, nome, d, visible):
     x0 = 0.8 * spot
     x1 = 1.2 * spot
 
-    diffs = np.diff(strikes)
-    diffs = diffs[diffs > 0]
-    step = float(np.median(diffs)) if len(diffs) else (x1 - x0) / 100.0
-    bar_width = step * 0.75
+    vis = strikes[(strikes >= x0) & (strikes <= x1)]
+    dv = np.diff(vis)
+    dv = dv[dv > 0]
+    step = float(np.percentile(dv, 25)) if len(dv) else (x1 - x0) / 100.0
+    bar_width = step * 0.6
 
     fig.add_trace(go.Bar(
         x=strikes, y=call_wall, width=bar_width,
