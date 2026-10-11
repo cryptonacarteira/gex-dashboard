@@ -1,0 +1,65 @@
+name: GEX Dashboard
+
+on:
+  schedule:
+    # Seg-Sex as 21:30 UTC (16:30 ET no inverno / 17:30 ET no verao), apos o fechamento
+    - cron: "30 21 * * 1-5"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: gex-dashboard
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: pip install -r requirements.txt
+
+      - name: Baixar dados SPX (Cboe API)
+        run: python baixar_spx.py
+
+      - name: Calcular GEX e gerar dashboard
+        env:
+          GEX_SKIP_GIT: "1"
+        run: python gex.py
+
+      - name: Commitar dashboard_gex.html
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Auto update GEX dashboard"
+          commit_user_name: "GEX Bot"
+          commit_user_email: "github-actions[bot]@users.noreply.github.com"
+
+      - name: Preparar site para GitHub Pages
+        run: |
+          mkdir -p site
+          cp dashboard_gex.html site/index.html
+
+      - name: Upload artifact para Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+
+  deploy:
+    needs: update
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy no GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

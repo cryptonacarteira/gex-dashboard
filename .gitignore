@@ -1,0 +1,4 @@
+spx_quotedata.csv
+__pycache__/
+*.pyc
+site/
